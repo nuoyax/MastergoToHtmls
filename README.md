@@ -127,6 +127,6 @@ Smoke test (DSL render assertions, classic + multi-page modes): `node tests/smok
 
 ![Export pipeline](docs/flow_export_pipeline.png)
 
-## Disclaimer
+## Disclaimer / 免责声明
 
-This project is for **learning and reference only** and must not be used for any commercial purpose. It depends on MasterGo's unofficial internal interfaces, which may change at any time; the authors assume no liability for any consequences arising from its use. All trademarks belong to their respective owners.
+本项目**仅用于学习参考，不能用于商业目的**。This project is for **learning and reference only** and must not be used for any commercial purpose.
