@@ -1,0 +1,22 @@
+{
+  "name": "mastergo-to-html",
+  "version": "0.1.0",
+  "private": true,
+  "main": "app/dist/main/main.js",
+  "scripts": {
+    "build": "tsc -p app/tsconfig.json",
+    "start": "npm run build && electron .",
+    "shot": "electron tests/screenshot.mjs",
+    "diff": "node tests/visual-diff.mjs"
+  },
+  "devDependencies": {
+    "@types/archiver": "^6.0.4",
+    "electron": "^33.0.0",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "archiver": "^6.0.2"
+  }
+}

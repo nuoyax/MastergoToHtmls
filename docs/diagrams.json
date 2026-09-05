@@ -1,0 +1,133 @@
+{
+  "out_dir": "D:\\agent3\\MastergoToHtml\\docs",
+  "architecture": {
+    "file": "arch_diagram.png",
+    "title": "MasterGo → HTML 导出工具 技术架构",
+    "subtitle": "Electron + webview 逆向钩取图层树 · 确定性渲染器 · 多页/流式导出 · ZIP 打包",
+    "layers": [
+      {
+        "title": "UI 层（渲染进程）",
+        "subtitle": "左侧操作面板 · 右侧内嵌 webview",
+        "modules": [
+          { "cx": 0.16, "lines": ["粘贴解析面板", "链接识别/短链解析", "fileId·layerId·pageId 展示"], "status": "exist" },
+          { "cx": 0.42, "lines": ["webview 登录区", "mastergo.com 登录态", "刷新登录清 Cookie"], "status": "exist" },
+          { "cx": 0.66, "lines": ["导出模式选择", "classic / 多页-flow / 多页-abs", "切图格式与倍图"], "status": "new" },
+          { "cx": 0.9, "lines": ["日志 + 传输列表", "步骤状态反馈", "导出角标/打开文件"], "status": "exist" }
+        ]
+      },
+      {
+        "title": "渲染引擎层（renderer/*.js，浏览器侧）",
+        "subtitle": "DSL → HTML，ctx.emit 钩子复用同一渲染内核",
+        "modules": [
+          { "cx": 0.18, "lines": ["mg-render.js", "DSL → 绝对定位 HTML", "富文本/阴影/旋转/SVG"], "status": "exist" },
+          { "cx": 0.44, "lines": ["mg-flow.js", "包围盒 flex 推断", "方向/gap/对齐 + 保守降级"], "status": "new" },
+          { "cx": 0.7, "lines": ["mg-multi.js", "每画板独立页 + index", "hash class 去重 + css/js 拆分"], "status": "new" },
+          { "cx": 0.9, "lines": ["transfer.js", "传输列表 UI", "导出计数角标"], "status": "exist" }
+        ]
+      },
+      {
+        "title": "桥接层（preload + IPC）",
+        "subtitle": "contextBridge 安全暴露 mgApi",
+        "modules": [
+          { "cx": 0.25, "lines": ["IPC 路由", "resolve-link / open-design", "mg:export / mg:export-multi"], "status": "new" },
+          { "cx": 0.75, "lines": ["注入脚本通道", "mg-inject.js 下发", "CDP 调试器抓 /data/ 响应"], "status": "exist" }
+        ]
+      },
+      {
+        "title": "核心引擎层（主进程 + 注入脚本）",
+        "subtitle": "链接解析 · 图层树钩取 · 打包",
+        "modules": [
+          { "cx": 0.14, "lines": ["link-parser.ts", "URL 截取 / 302 跟随", "fileId·layerId·pageId"], "status": "exist" },
+          { "cx": 0.4, "lines": ["mg-inject.js", "webpack 劫持 → masterkit 桥", "getLayerData 递归图层树", "SVG 官方导出 + 切图栅格化"], "status": "exist" },
+          { "cx": 0.66, "lines": ["图层定位模式", "URL layer_id → 单图层根", "截断保护 maxNodes=200k"], "status": "new" },
+          { "cx": 0.9, "lines": ["main.ts 打包", "archiver → ZIP", "slices/ + meta.json"], "status": "exist" }
+        ]
+      },
+      {
+        "title": "外部依赖",
+        "subtitle": "MasterGo 在线服务（只读）",
+        "modules": [
+          { "cx": 0.25, "lines": ["mastergo.com", "/goto 301 · /data/ 二进制", "WebSocket /messenger"], "status": "exist" },
+          { "cx": 0.55, "lines": ["masterkit.wasm", "官方前端二进制解码", "复用其解码结果，不逆向"], "status": "exist" },
+          { "cx": 0.85, "lines": ["静态资源域", "image-resource / static", "字体 · 位图 · SVG"], "status": "exist" }
+        ]
+      }
+    ],
+    "annotations": [
+      { "from": [0.25, 0.585], "to": [0.25, 0.44], "label": "mgApi (contextBridge)", "label_xy": [0.25, 0.51] },
+      { "from": [0.75, 0.585], "to": [0.75, 0.44], "label": "IPC invoke/handle + CDP", "label_xy": [0.75, 0.51] },
+      { "from": [0.5, 0.36], "to": [0.5, 0.22], "label": "HTTPS/WS (代理 7890)", "label_xy": [0.5, 0.29] }
+    ],
+    "vertical_links": [
+      { "xs": [0.18, 0.44, 0.7], "from_y": 0.72, "to_y": 0.585 },
+      { "xs": [0.25, 0.75], "from_y": 0.585, "to_y": 0.44 }
+    ]
+  },
+  "sequences": [
+    {
+      "file": "seq_parse_export.png",
+      "title": "核心时序：粘贴链接 → 解析 → 钩取图层树 → 渲染导出",
+      "participants": ["用户", "渲染进程 UI", "主进程", "webview(mastergo)", "mastergo 服务端"],
+      "messages": [
+        [0, 1, "粘贴邀请文本，点「解析链接」"],
+        [1, 2, "ipc: mg:resolve-link(text)"],
+        [2, 4, "GET /goto/xxx (redirect:manual)"],
+        [4, 2, "301 Location → /file/{fileId}?layer_id=..."],
+        [2, 1, "返回 {fileId, layerId, pageId}"],
+        [0, 1, "点「加载设计稿」"],
+        [1, 3, "webview.loadURL(目标链接)，用户登录"],
+        [1, 3, "dom-ready → 注入 mg-inject.js"],
+        [3, 4, "GET /data/ 二进制（CDP 旁路捕获）"],
+        [3, 3, "masterkit.wasm 解码 → nodeMap 图层树"],
+        [1, 3, "extractDsl(): webpack桥 getLayerData 递归遍历"],
+        [3, 1, "DSL JSON 回传（layer_id 定位→单图层根）"],
+        [1, 1, "选择导出模式 classic / multi-flow / multi-abs"],
+        [1, 1, "mg-render/mg-multi 渲染 + mg-flow 布局推断"],
+        [1, 3, "ipc: mg:export / mg:export-multi（含切图）"],
+        [2, 2, "archiver: pages/ + css/ + js/ + slices/ + meta.json"],
+        [2, 0, "时间戳 ZIP → download/，传输列表 +1"]
+      ]
+    }
+  ],
+  "flowcharts": [
+    {
+      "file": "flow_export_pipeline.png",
+      "title": "导出流水线流程图（含多页模式与布局推断降级）",
+      "nodes": {
+        "start":  ["开始：提取到 DSL", 0.5, 0.945, "start"],
+        "mode":   ["导出模式?", 0.5, 0.86, "dec"],
+        "classic": ["renderDsl\n单文件绝对定位 HTML", 0.18, 0.75, "proc"],
+        "multi":  ["renderDslMulti\n每画板独立页 + index.html", 0.82, 0.75, "proc"],
+        "flowq":  ["layout = flow?", 0.82, 0.655, "dec"],
+        "infer":  ["逐容器 mg-flow.inferLayout\n方向/gap/padding/对齐", 0.82, 0.55, "proc"],
+        "canflow": ["canFlow 通过?", 0.82, 0.455, "dec"],
+        "flowcss": ["改写为 flex 容器\n子节点脱离绝对定位", 0.93, 0.355, "proc"],
+        "abs":    ["保持绝对定位\ndegrade[reason]+1", 0.7, 0.355, "proc"],
+        "style":  ["样式串 → hash class 去重\n（left/top 留 inline）", 0.5, 0.26, "proc"],
+        "assets": ["组装资产\ncss/main.css · js/main.js", 0.5, 0.17, "proc"],
+        "slices": ["切图导出 exportSlices\nSVG/PNG/JPG/WebP × 1x-4x", 0.5, 0.08, "proc"],
+        "zip":    ["archiver 打包\nmastergo-multi-*.zip + meta.json", 0.5, 0.0, "end"],
+        "html1":  ["内联样式 index.html", 0.18, 0.62, "proc"],
+        "zip1":   ["archiver 打包\nmastergo-export-*.zip", 0.18, 0.5, "end"]
+      },
+      "edges": [
+        ["start", "mode", ""],
+        ["mode", "classic", "classic"],
+        ["mode", "multi", "multi-*"],
+        ["classic", "html1", ""],
+        ["html1", "zip1", ""],
+        ["multi", "flowq", ""],
+        ["flowq", "infer", "是"],
+        ["flowq", "style", "否（绝对定位）"],
+        ["infer", "canflow", ""],
+        ["canflow", "flowcss", "通过"],
+        ["canflow", "abs", "降级"],
+        ["flowcss", "style", ""],
+        ["abs", "style", ""],
+        ["style", "assets", ""],
+        ["assets", "slices", ""],
+        ["slices", "zip", ""]
+      ]
+    }
+  ]
+}

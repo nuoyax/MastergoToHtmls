@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-src https://mastergo.com https://*.mastergo.com; connect-src *; img-src * data:" />
+  <title>MasterGo → HTML</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; display: flex; height: 100vh; }
+    #sidebar { width: 380px; padding: 16px; border-right: 1px solid #ddd; display: flex; flex-direction: column; gap: 12px; }
+    textarea { width: 100%; height: 90px; resize: vertical; font-size: 13px; padding: 8px; }
+    button { padding: 10px; cursor: pointer; border: 1px solid #1976d2; background: #1976d2; color: #fff; border-radius: 4px; }
+    button:disabled { opacity: .5; }
+    button.secondary { background: #fff; color: #1976d2; }
+    #linkInfo { font-size: 12px; color: #555; background: #f5f7fa; padding: 8px; border-radius: 4px; word-break: break-all; min-height: 40px; }
+    #log { font-size: 11px; color: #888; white-space: pre-wrap; flex: 1; overflow: auto; background: #111; color: #9f9; padding: 8px; border-radius: 4px; }
+    #webviewBox { flex: 1; display: flex; flex-direction: column; }
+    #webview { flex: 1; border: 0; }
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>MasterGo → HTML</h3>
+    <textarea id="input" placeholder="粘贴邀请链接，如：邀请您进入《项目名》…https://mastergo.com/goto/xxxx?page_id=M&layer_id=3:865&file=123456"></textarea>
+    <button id="btnParse">1. 解析链接</button>
+    <div id="linkInfo">等待输入…</div>
+    <button id="btnOpen" disabled>2. 加载设计稿（右侧登录后自动解析）</button>
+    <button id="btnExtract" disabled>3. 提取图层树 DSL</button>
+    <div style="display:flex;gap:8px;">
+      <label style="font-size:12px;display:flex;flex-direction:column;gap:2px;flex:1;">导出模式
+        <select id="exportMode">
+          <option value="classic" selected>单文件（绝对定位）</option>
+          <option value="multi-flow">多页+拆分（流式布局）</option>
+          <option value="multi-abs">多页+拆分（绝对定位）</option>
+        </select>
+      </label>
+      <label style="font-size:12px;display:flex;flex-direction:column;gap:2px;flex:1;">切图格式
+        <select id="sliceFormat">
+          <option value="svg">SVG</option>
+          <option value="png" selected>PNG</option>
+          <option value="jpg">JPG</option>
+          <option value="webp">WebP</option>
+        </select>
+      </label>
+      <label style="font-size:12px;display:flex;flex-direction:column;gap:2px;flex:1;">倍图（PNG/JPG/WebP）
+        <select id="sliceScales" multiple size="3">
+          <option value="1" selected>1x</option>
+          <option value="2" selected>2x</option>
+          <option value="3">3x</option>
+          <option value="4">4x</option>
+        </select>
+      </label>
+    </div>
+    <button id="btnExport" disabled>4. 导出 HTML</button>
+    <div id="log"></div>
+  </div>
+  <div id="webviewBox">
+    <div style="display:flex;gap:8px;padding:6px;border-bottom:1px solid #eee;align-items:center;">
+      <button id="btnReLogin" class="secondary" style="padding:6px 12px;">刷新登录</button>
+      <span style="font-size:12px;color:#888;line-height:1;">页面500/登录失效时点击：回到首页重新登录</span>
+    </div>
+    <webview id="webview" src="https://mastergo.com"></webview>
+  </div>
+
+  <script src="./mg-render.js"></script>
+  <script src="./mg-flow.js"></script>
+  <script src="./mg-multi.js"></script>
+  <script src="./transfer.js"></script>
+  <script src="./renderer.js"></script>
+</body>
+</html>
