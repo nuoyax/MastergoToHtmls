@@ -2,6 +2,8 @@
 
 [English](README.md)
 
+许可证：[MIT](LICENSE)
+
 Electron 桌面工具：在内置 webview 中打开 MasterGo 设计稿，通过页面自身渲染引擎提取完整图层树（DSL），渲染为高保真的独立 `index.html`，并把全部图标切图打包成带时间戳的 ZIP。
 
 ## 功能特性

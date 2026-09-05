@@ -2,6 +2,8 @@
 
 [中文说明](README.zh-CN.md)
 
+License: [MIT](LICENSE)
+
 An Electron desktop tool that opens a MasterGo design file in an embedded webview, extracts the full layer tree (DSL) through the page's own rendering engine, renders it to a pixel-faithful standalone `index.html`, and packages it with all icon slices into a timestamped ZIP.
 
 ## Features
